@@ -3,7 +3,7 @@ import { generateText } from "ai";
 import { codeReviewPrompt } from "@/app/prompts/codereview";
 
 const google = createGoogleGenerativeAI({
-  apiKey: "AIzaSyAEoSfQ12S5fG3m02MKXAzBFF9PB1l65jY",
+  apiKey: process.env.apiKey,
 });
 
 export async function POST() {
