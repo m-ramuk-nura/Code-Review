@@ -1,15 +1,13 @@
-// src/app/api/question/route.js
 import mysql from "mysql2/promise";
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const q_id = searchParams.get("q_id") || 1;
-
   const connection = await mysql.createConnection({
-    host: process.env.DB_HOST || "localhost",
-    user: process.env.DB_USER || "root",
-    password: process.env.DB_PASSWORD || "356676",
-    database: process.env.DB_NAME || "codereview",
+    host: "localhost",
+    user: "root",
+    password: "356676",
+    database: "codereview",
   });
 
   try {

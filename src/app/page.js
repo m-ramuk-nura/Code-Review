@@ -1,13 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import ReactMarkdown from "react-markdown";
 
 export default function Page() {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
+  const [aiResponse, setAiResponse] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
 
   useEffect(() => {
-    fetch("/api/question") // defaults to q_id = 1
+    fetch("/api/question")
       .then((res) => {
         if (!res.ok) {
           throw new Error("Failed to fetch data");
@@ -17,6 +20,32 @@ export default function Page() {
       .then((result) => setData(result))
       .catch((err) => setError(err.message));
   }, []);
+
+  const fetchAiResponse = async () => {
+    setAiLoading(true);
+    try {
+      const res = await fetch("/api/codereview", { method: "POST" });
+      if (!res.ok) {
+        throw new Error("Failed to generate AI response");
+      }
+      const result = await res.json();
+      setAiResponse(result);
+    } catch (err) {
+      setAiResponse({ error: err.message });
+    }
+    setAiLoading(false);
+  };
+
+  const formatAiResponse = (response) => {
+    if (typeof response === "string") {
+      let trimmed = response.trim();
+      if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+        return trimmed.slice(1, -1);
+      }
+      return trimmed;
+    }
+    return response;
+  };
 
   if (error)
     return (
@@ -46,14 +75,11 @@ export default function Page() {
       </div>
     );
 
-  // Use the first submission if available
   const userSubmission = data.submissions[0];
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-b from-blue-50 to-white">
-      {/* Main Content */}
       <div className="h-full flex flex-col">
-        {/* Header */}
         <header className="bg-blue-600 text-white shadow-md">
           <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between">
@@ -63,11 +89,9 @@ export default function Page() {
           </div>
         </header>
 
-        {/* Content */}
         <main className="flex-grow">
           <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-              {/* Problem Description - 2 columns */}
               <div className="lg:col-span-2 space-y-6">
                 <div className="bg-white shadow-lg rounded-xl overflow-hidden">
                   <div className="border-b border-gray-200 bg-blue-50 px-6 py-4">
@@ -82,7 +106,6 @@ export default function Page() {
                   </div>
                 </div>
 
-                {/* Test Cases */}
                 <div className="bg-white shadow-lg rounded-xl overflow-hidden">
                   <div className="border-b border-gray-200 bg-blue-50 px-6 py-4">
                     <h2 className="text-xl font-semibold text-blue-800 flex items-center">
@@ -143,9 +166,39 @@ export default function Page() {
                     )}
                   </div>
                 </div>
+
+                <div className="bg-white shadow-lg rounded-xl overflow-hidden">
+                  <div className="border-b border-gray-200 bg-blue-50 px-6 py-4">
+                    <h2 className="text-xl font-semibold text-blue-800">
+                      Code Review
+                    </h2>
+                  </div>
+                  <div className="p-6">
+                    {aiResponse ? (
+                      <div className="bg-gray-100 text-gray-700 p-4 rounded text-sm font-mono overflow-x-auto">
+                        <ReactMarkdown>
+                          {formatAiResponse(aiResponse)}
+                        </ReactMarkdown>
+                      </div>
+                    ) : (
+                      <p className="text-gray-700">
+                        {aiLoading
+                          ? "Generating Code Review..."
+                          : "Click the button below to generate a code review."}
+                      </p>
+                    )}
+
+                    <button
+                      onClick={fetchAiResponse}
+                      className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                      disabled={aiLoading}
+                    >
+                      {aiLoading ? "Loading..." : "Generate Code Review"}
+                    </button>
+                  </div>
+                </div>
               </div>
 
-              {/* User Code - 3 columns */}
               <div className="lg:col-span-3">
                 <div className="bg-white shadow-lg rounded-xl overflow-hidden h-full flex flex-col">
                   <div className="border-b border-gray-200 bg-blue-50 px-6 py-4 flex justify-between items-center">
@@ -199,12 +252,6 @@ export default function Page() {
                               d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                             />
                           </svg>
-                          <p className="text-blue-700 mb-4">
-                            No submission available.
-                          </p>
-                          <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
-                            Start Coding
-                          </button>
                         </div>
                       </div>
                     )}
